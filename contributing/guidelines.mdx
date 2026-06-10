@@ -1,0 +1,157 @@
+---
+title: "Contributing to Desktop Assistant: Guidelines"
+sidebarTitle: "Guidelines"
+description: "Learn how to contribute to Jarvis: submit pull requests, report bugs, request features, and keep code quality high with automated linting."
+---
+
+Desktop Assistant (Jarvis) is an open-source project and contributions of every kind are warmly welcomed — whether you are fixing a bug, adding a new voice command, improving the GUI, or updating documentation. This page walks you through the full contribution workflow sourced directly from the project's `Contributing.md`, explains how to use the GitHub issue templates, and describes the automated CI checks your code must pass before merging.
+
+## Contribution Workflow
+
+Before writing any code, make sure the work you plan to do is tracked by a GitHub issue. If an open issue already covers the change you want to make, leave a comment asking to be assigned. If no issue exists yet, open one first. This keeps everyone aligned and avoids duplicate effort.
+
+<Steps>
+  <Step title="Find or open a GitHub issue">
+    Browse the [Issues tab](https://github.com/Harsha200105/DesktopAssistant/issues) to find work that interests you. Comment on the issue to let the maintainer know you'd like to work on it and wait to be assigned. For new ideas, open an issue before starting so the approach can be discussed.
+  </Step>
+
+  <Step title="Fork the repository">
+    Click the **Fork** button on the [DesktopAssistant repository page](https://github.com/Harsha200105/DesktopAssistant) to create a personal copy under your GitHub account.
+  </Step>
+
+  <Step title="Clone your fork">
+    Open a terminal and clone your forked repository to your local machine:
+
+    ```bash
+    git clone https://github.com/YOUR-USERNAME/DesktopAssistant.git
+    cd DesktopAssistant
+    ```
+
+    Replace `YOUR-USERNAME` with your actual GitHub username.
+  </Step>
+
+  <Step title="Create a branch named after the issue">
+    Create and check out a new branch. Name it after the issue number you are resolving — for example, `issue_42` for issue #42:
+
+    ```bash
+    git branch issue_42
+    git checkout issue_42
+    ```
+
+    Or in a single command:
+
+    ```bash
+    git checkout -b issue_42
+    ```
+  </Step>
+
+  <Step title="Make your changes and commit">
+    Implement your fix or feature. Once you are happy with the result, stage all changes and write a descriptive commit message:
+
+    ```bash
+    git add .
+    git commit -m "Add command_weather to fetch current weather by city"
+    ```
+
+    You can run `git status` at any time to review which files have been modified.
+  </Step>
+
+  <Step title="Push to your fork">
+    Push the branch to your forked repository on GitHub:
+
+    ```bash
+    git push origin issue_42
+    ```
+  </Step>
+
+  <Step title="Open a Pull Request">
+    Navigate to your fork on GitHub. GitHub will show a **Compare & pull request** banner at the top of the page. Click it to open the PR form. In the description, include the linked issue using the `Closes` keyword so the issue is automatically closed when the PR is merged:
+
+    ```
+    Closes #42
+    ```
+
+    Fill out the PR checklist (see the section below) and submit.
+  </Step>
+</Steps>
+
+## Pull Request Guidelines
+
+The project's Pull Request template includes a checklist that every contributor should complete before requesting review. Keep these points in mind:
+
+- **Add real value.** Every PR should fix a bug, add a feature, or meaningfully improve the codebase or documentation. Cosmetic-only changes are unlikely to be merged.
+- **Comment and document your code.** Jarvis is used and contributed to by developers with varying levels of familiarity with the codebase. Comment any non-obvious logic, especially in `commands.py` and `actions.py`. The PR template explicitly checks: *"I have commented my code, particularly in hard-to-understand areas."*
+- **Link the resolved issue.** Include `Closes #<issue_number>` in the PR description so the issue closes automatically on merge. PRs without a linked issue may be asked to create one first.
+- **Review `Contributing.md` before submitting.** The canonical guidelines live in `Requirements&COC/Contributing.md` in the repository. Read it end-to-end before opening your PR.
+- **Ensure no new warnings.** The CI pipeline runs several linting and static-analysis tools (see [Code Quality](#code-quality) below). Your changes should not introduce new warnings from `flake8`, `mypy`, or `bandit`.
+
+<Note>
+  The PR template also has a **Screenshots** section. If your change touches the Tkinter GUI — for example, modifying `src/gui.py` — attach a screenshot of the updated interface.
+</Note>
+
+## Reporting Bugs
+
+If you encounter unexpected behavior while running Jarvis, open a **Bug Report** issue using the project's built-in template. Navigate to [New Issue](https://github.com/Harsha200105/DesktopAssistant/issues/new/choose) and select **Bug report**.
+
+The template asks for the following information — provide as much detail as possible to help maintainers reproduce the problem:
+
+| Field | What to include |
+|---|---|
+| **Describe the bug** | A clear, concise description of what went wrong |
+| **Steps to reproduce** | Numbered steps: what you said or typed, what Jarvis did |
+| **Expected behavior** | What you expected Jarvis to do |
+| **Actual behavior** | What Jarvis actually did (error message, wrong output, crash) |
+| **Screenshots** | Terminal output, the GUI window, or any relevant screenshots |
+| **Python version** | Output of `python --version` |
+| **Operating system** | e.g., Windows 10, Ubuntu 22.04 |
+
+<Warning>
+  Before filing a new bug, search existing issues to avoid duplicates. If you find an open issue that matches yours, add a comment with your environment details rather than opening a new one.
+</Warning>
+
+## Requesting Features
+
+Have an idea for a new voice command or a quality-of-life improvement? Open a **Feature Request** issue using the project template. Navigate to [New Issue](https://github.com/Harsha200105/DesktopAssistant/issues/new/choose) and select **Feature request**. The template will be automatically labeled `new_feature`.
+
+Describe:
+
+- **The problem you want solved** — e.g., "I'm always frustrated when Jarvis can't tell me the current time without an internet connection."
+- **Your proposed solution** — a clear description of the new behaviour you'd like.
+- **Alternatives you considered** — other approaches you thought about and why you prefer your proposal.
+- **Additional context** — mockups, links to similar projects, or any other relevant information.
+
+## Code Quality
+
+Every push and every Pull Request triggers the `lint_python` GitHub Actions workflow defined in `.github/workflows/lint_python.yml`. The pipeline runs the following checks against all Python files in the repository:
+
+```yaml
+- run: flake8 . --count --max-complexity=19 --max-line-length=88 --show-source --statistics
+- run: bandit --recursive --skip B311,B605 .
+- run: black --check . || true
+- run: isort --check-only --profile black .
+- run: mypy --ignore-missing-imports --install-types --non-interactive .
+```
+
+The checks your PR **must** pass are:
+
+- **`flake8`** — enforces PEP 8 style. Maximum line length is 88 characters and maximum cyclomatic complexity is 19.
+- **`bandit`** — static security analysis. Rules `B311` (random number generators) and `B605` (subprocess shell) are excluded.
+- **`isort`** — import ordering following the `black` profile.
+- **`mypy`** — optional static type checking; missing imports are tolerated.
+
+You can run these locally before pushing:
+
+```bash
+pip install flake8 bandit isort mypy
+flake8 src/ --max-complexity=19 --max-line-length=88
+bandit --recursive --skip B311,B605 src/
+isort --check-only --profile black src/
+```
+
+<Tip>
+  The `black --check` step is set to `|| true` so it will not block a merge, but formatting your code with `black src/` before committing keeps the diff clean and reviewers happy.
+</Tip>
+
+## Documentation Contributions
+
+Code is not the only way to contribute. If you find outdated instructions, unclear explanations, or missing coverage in the project documentation, please raise a **documentation** issue on GitHub with a description of what needs to be improved. Documentation PRs follow the same workflow as code PRs and are reviewed with the same care.

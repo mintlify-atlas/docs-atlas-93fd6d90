@@ -1,0 +1,83 @@
+---
+title: "Send Emails by Voice with Desktop Assistant"
+sidebarTitle: "Email"
+description: "Dictate and send emails entirely by voice — Jarvis asks for the recipient and message body, then sends via SMTP using credentials from config.ini."
+---
+
+Jarvis can send emails on your behalf using nothing but your voice. The entire interaction is conversational: Jarvis asks who the email is for, listens for the recipient address, asks what to say, listens for the message body, and then sends the email over SMTP. All connection details — server, port, username, and password — are stored in `config.ini` so the source code never needs to change between accounts.
+
+## Prerequisites
+
+The `[EMAIL]` section of `config.ini` must be filled in before the email command works:
+
+```ini
+[EMAIL]
+server   = smtp.gmail.com
+port     = 587
+username = you@gmail.com
+password = your_app_password
+```
+
+<Warning>
+  Credentials are stored as **plain text** in `config.ini`. Never commit this file to a public repository. For Gmail, generate a dedicated [App Password](https://support.google.com/accounts/answer/185833) in your Google Account settings instead of using your main account password — this limits the scope of access and lets you revoke it independently.
+</Warning>
+
+## Voice interaction flow
+
+<Steps>
+  <Step title="Trigger the command">
+    Say **"mail"** or **"email"**. Either phrase activates `command_mail()`.
+  </Step>
+  <Step title="Speak the recipient address">
+    Jarvis asks *"Who is the recipient?"* and listens. Speak the full email address of the person you want to send to (e.g. `friend@example.com`).
+  </Step>
+  <Step title="Dictate the message body">
+    Jarvis asks *"What should I say?"* and listens. Speak your full message. The transcribed text becomes the email body.
+  </Step>
+  <Step title="Jarvis sends and confirms">
+    Jarvis connects to the SMTP server, authenticates, sends the message, closes the connection, and says *"Email sent!"*. If anything goes wrong, it says *"Sorry Sir! I am unable to send your message at this moment!"*
+  </Step>
+</Steps>
+
+## The `command_mail()` function
+
+```python
+def command_mail(take_command):
+    speak("Who is the recipient? ")
+    recipient = take_command()
+
+    try:
+        speak("What should I say? ")
+        content = take_command()
+
+        email = config['EMAIL']
+        server = smtplib.SMTP(email['server'], email['port'])
+        server.ehlo()
+        server.starttls()
+        server.login(email['username'], email['password'])
+        server.sendmail(email['username'], recipient, content)
+        server.close()
+        speak("Email sent!")
+    except Exception:
+        speak("Sorry Sir!")
+        speak("I am unable to send your message at this moment!")
+```
+
+## SMTP connection flow
+
+The function establishes a secure SMTP session in the standard way:
+
+| Step | Method | Purpose |
+|---|---|---|
+| Connect | `smtplib.SMTP(server, port)` | Open a TCP connection to the mail server on port 587 |
+| Handshake | `server.ehlo()` | Identify the client to the server (Extended HELO) |
+| Encrypt | `server.starttls()` | Upgrade the connection to TLS before sending credentials |
+| Authenticate | `server.login(username, password)` | Log in with the credentials from `config.ini` |
+| Send | `server.sendmail(from, to, body)` | Deliver the message |
+| Close | `server.close()` | Gracefully terminate the SMTP session |
+
+<Note>
+  The email body sent by Jarvis is plain text with no subject line or MIME headers. If your mail client shows the message as raw text rather than a formatted email, this is expected behaviour. Adding a subject and MIME formatting would require wrapping `content` in an `email.mime.text.MIMEText` object before calling `sendmail()`.
+</Note>
+
+For full setup instructions including Gmail App Password configuration, see the [Email Setup guide](/configuration/email-setup).

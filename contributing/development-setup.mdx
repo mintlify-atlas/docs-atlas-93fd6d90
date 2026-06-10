@@ -1,0 +1,267 @@
+---
+title: "Set Up a Development Environment for Desktop Assistant"
+sidebarTitle: "Dev Setup"
+description: "Step-by-step guide to forking, cloning, and running Desktop Assistant (Jarvis) locally for development, including debug mode and adding new commands."
+---
+
+Getting a local development environment running for Desktop Assistant is straightforward. The project is a pure-Python application, so all you need is a compatible Python interpreter, a virtual environment, and the platform-specific dependency list provided in the repository. This page covers every step from forking the repo to running Jarvis in text-input (debug) mode so you can iterate on new commands without needing a microphone attached.
+
+## Prerequisites
+
+Before you begin, make sure the following are available on your machine:
+
+- **Python 3.9 or later** — the project's Ubuntu dependency snapshot was built against Python 3.9.7. Run `python --version` to check.
+- **git** — needed to clone the repository and manage branches.
+- **A microphone** (optional for development) — Jarvis uses `speech_recognition` to capture voice input. Set `debug = True` in `config.ini` to bypass the microphone entirely and type commands instead.
+
+<Note>
+  On Ubuntu you also need the system libraries `portaudio19-dev` and `espeak` before installing Python packages. The commands are shown in the setup steps below.
+</Note>
+
+## Setting Up Your Environment
+
+<Steps>
+  <Step title="Fork and clone the repository">
+    Fork the repository on GitHub, then clone your fork:
+
+    ```bash
+    git clone https://github.com/YOUR-USERNAME/DesktopAssistant.git
+    cd DesktopAssistant
+    ```
+
+    If you plan to contribute back, also add the upstream remote:
+
+    ```bash
+    git remote add upstream https://github.com/Harsha200105/DesktopAssistant.git
+    ```
+  </Step>
+
+  <Step title="Create and activate a virtual environment">
+    Create a virtual environment inside the repository root so your system Python is not affected:
+
+    ```bash
+    python -m venv venv
+    ```
+
+    Then activate it for your platform:
+
+    <Tabs>
+      <Tab title="Windows">
+        ```bash
+        venv\Scripts\activate
+        ```
+      </Tab>
+      <Tab title="Ubuntu / macOS">
+        ```bash
+        source venv/bin/activate
+        ```
+      </Tab>
+    </Tabs>
+
+    Your terminal prompt will be prefixed with `(venv)` once the environment is active.
+  </Step>
+
+  <Step title="Install dependencies">
+    The repository ships two requirements files — one per platform.
+
+    <Tabs>
+      <Tab title="Windows">
+        ```bash
+        pip install --upgrade pip
+        pip install -r "Requirements&COC/requirements.txt"
+        ```
+
+        The Windows requirements file installs:
+
+        ```text
+        pygame==2.0.1
+        SpeechRecognition==3.8.1
+        wikipedia==1.4.0
+        PyAudio==0.2.11
+        pyttsx3==2.90
+        tk
+        ```
+      </Tab>
+      <Tab title="Ubuntu">
+        First install the required system libraries:
+
+        ```bash
+        sudo apt-get update
+        sudo apt install portaudio19-dev python3-pyaudio
+        sudo apt-get install espeak
+        ```
+
+        Then install the Python packages:
+
+        ```bash
+        pip install --upgrade pip setuptools==58.0.4
+        pip install -r "Requirements&COC/ubuntu_requirements.txt"
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Copy config.ini into the src/ directory">
+    Jarvis reads `config.ini` from the **current working directory** at startup (see the `os.path.isfile('./config.ini')` check at the bottom of `src/Jarvis2_4windows.py`). Copy the template and then edit it:
+
+    ```bash
+    cp "Requirements&COC/config.ini" src/config.ini
+    ```
+
+    Open `src/config.ini` and fill in your details:
+
+    ```ini
+    [DEFAULT]
+    master = YourName
+    search_engine = Google
+    debug = False
+    musicpath =
+    voice = Male
+    rate = 150
+    volume = 100
+    energy_threshold = 300
+
+    [EMAIL]
+    server = smtp.gmail.com
+    port = 587
+    username =
+    password =
+    ```
+
+    Key settings:
+
+    | Key | Description |
+    |---|---|
+    | `master` | The name Jarvis uses when greeting you |
+    | `search_engine` | `Google`, `Bing`, `DuckDuckGo`, or `Youtube` |
+    | `debug` | Set to `True` to use keyboard input instead of the microphone |
+    | `musicpath` | Absolute path to a folder containing `music1.mp3` … `music4.mp3` |
+    | `voice` | `Male` or `Female` — maps to the first or second pyttsx3 voice |
+    | `rate` | Speech rate in words per minute (default `150`) |
+    | `volume` | Volume as a percentage from `0` to `100` (default `100`) |
+    | `energy_threshold` | Microphone sensitivity; increase if Jarvis misses commands |
+  </Step>
+
+  <Step title="Run Jarvis in debug mode">
+    With `debug = True` in `config.ini`, Jarvis replaces the microphone with a simple `input()` prompt. This lets you test command routing without any audio hardware.
+
+    ```bash
+    cd src
+    python Jarvis2_4windows.py   # Windows
+    # or
+    python Jarvis2.py            # Ubuntu
+    ```
+
+    The Tkinter window will open and you will see the `Command |-->` prompt in your terminal. Type a command (e.g., `wikipedia Python programming language`) and press Enter to see Jarvis respond.
+  </Step>
+</Steps>
+
+## Code Structure
+
+The project is intentionally lean — most logic lives in four Python files under `src/`:
+
+<CardGroup cols={2}>
+  <Card title="src/Jarvis2_4windows.py" icon="windows">
+    **Windows entry point.** Contains `run()` (reads `config.ini`, builds the `take_command` closure, calls `wish_me`) and `main()` (holds the `phrases` dict for zero-argument commands and the `execute_the_command_said_by_user` inner function for argument-bearing commands). This is the file to edit when wiring in a new command.
+  </Card>
+  <Card title="src/Jarvis2.py" icon="linux">
+    **Ubuntu entry point.** A self-contained monolithic script that inlines `speak`, `wish_me`, `take_command`, and `execute_the_command_said_by_user` without importing from `commands.py` or `actions.py`. Useful as a reference for the expected end-to-end behaviour of each command.
+  </Card>
+  <Card title="src/commands.py" icon="code">
+    **Individual command handlers.** Each public function handles one user intent. Current handlers: `command_wikipedia`, `command_whatsup`, `command_open`, `command_search`, `command_mail`, `command_nothing`, `command_hello`, `command_bye`, `command_play_music`, `command_pause_music`, `command_stop_music`, `command_unpause_music`. New commands belong here.
+  </Card>
+  <Card title="src/actions.py" icon="bolt">
+    **Core utilities shared across commands.** Exports: `speak(text)`, `wish_me(master)`, `open_url(url)`, `search(search_query, search_engine)`, `search_engine_selector(config)`, `change_rate(query, take_command)`, `change_voice(query, take_command)`, `change_volume(query, take_command)`, `set_gui_speak(command)`. The `pyttsx3` engine is initialised at module level.
+  </Card>
+  <Card title="src/gui.py" icon="display">
+    **Tkinter GUI.** Builds a 700 × 500 root window with a scrollable `Listbox` that displays assistant responses and a **Speak** button wired to `execute_the_command_said_by_user`. The `speak(text)` function here appends `Assistant: <text>` to the listbox. `mainloop` is the Tkinter `root.mainloop` function re-exported for use by the entry points.
+  </Card>
+  <Card title="Requirements&COC/" icon="folder">
+    **Config and dependency files.** `config.ini` — settings template; `requirements.txt` — Windows pip dependencies; `ubuntu_requirements.txt` — Ubuntu pip dependencies (also documents required system packages as comments).
+  </Card>
+</CardGroup>
+
+## Adding a New Command
+
+Adding a voice command to Jarvis takes two steps: implement the handler in `commands.py`, then register the trigger phrase in `Jarvis2_4windows.py`.
+
+### 1. Implement the handler in `src/commands.py`
+
+Follow the existing pattern. Zero-argument commands accept no parameters; commands that need user input accept `query` and/or `take_command` (and optionally `debug`):
+
+```python
+# src/commands.py
+
+def command_joke():
+    """Tell a random pre-written joke."""
+    jokes = [
+        "Why do programmers prefer dark mode? Because light attracts bugs.",
+        "I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads.",
+    ]
+    speak(random.choice(jokes))
+```
+
+For commands that need to search or open URLs, import and call the helpers from `actions.py`:
+
+```python
+from actions import open_url, search, speak
+```
+
+### 2. Wire the phrase in `src/Jarvis2_4windows.py`
+
+**Zero-argument commands** — add an entry to the `phrases` dict inside `execute_the_command_said_by_user`:
+
+```python
+phrases = {
+    "what's up":    command_whatsup,
+    "nothing":      command_nothing,
+    "abort":        command_nothing,
+    "stop":         command_nothing,
+    "hello":        command_hello,
+    "bye":          command_bye,
+    "play music":   command_play_music,
+    "unpause":      command_unpause_music,
+    "pause music":  command_pause_music,
+    "stop music":   command_stop_music,
+    "tell me a joke": command_joke,   # ← new entry
+}
+```
+
+Also add the import at the top of the file:
+
+```python
+from commands import (  # isort: skip
+    ...
+    command_joke,
+)
+```
+
+**Commands that need the query string** — add an `elif` branch in the same function, after the `phrases` loop:
+
+```python
+elif "joke" in query:
+    command_joke()
+```
+
+<Tip>
+  Run Jarvis with `debug = True` after adding your command. Type the trigger phrase at the `Command |-->` prompt to verify routing before testing with microphone input.
+</Tip>
+
+## Linting
+
+The CI pipeline (`.github/workflows/lint_python.yml`) runs `flake8` with a maximum line length of 88 and maximum cyclomatic complexity of 19. Run the same check locally before pushing:
+
+```bash
+flake8 src/ --count --max-complexity=19 --max-line-length=88 --show-source --statistics
+```
+
+The pipeline also runs `bandit` for security issues, `isort` for import ordering, `codespell` for typos, and `mypy` for type checking. Install them all at once:
+
+```bash
+pip install bandit black codespell flake8 flake8-bugbear flake8-comprehensions \
+            flake8-return isort mypy pep8-naming pyupgrade safety
+```
+
+<Warning>
+  `pyttsx3` initialises the `sapi5` speech engine at import time on Windows (`engine = pyttsx3.init("sapi5")`). If you are running the CI linting steps on a Linux machine (as the workflow does), import errors from `actions.py` are expected and are handled by the `--ignore-missing-imports` flag passed to `mypy`.
+</Warning>

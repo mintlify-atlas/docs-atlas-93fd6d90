@@ -1,0 +1,130 @@
+---
+title: "Configure Desktop Assistant with config.ini"
+sidebarTitle: "Config File"
+description: "Reference for every config.ini parameter that controls Jarvis — names, search engines, microphone thresholds, TTS voice, and email credentials."
+---
+
+The `config.ini` file is **required** by the Windows entry point (`Jarvis2_4windows.py`). On startup the script checks for its presence with `os.path.isfile('./config.ini')` and exits with an error message if the file is missing. Every runtime setting — from your name used in greetings to microphone sensitivity and email credentials — is read from this file at launch.
+
+## Full config.ini template
+
+Copy the block below into `src/config.ini` and fill in the values that apply to your setup:
+
+```ini
+[DEFAULT]
+master = YourName
+search_engine = Google
+debug = False
+musicpath = 
+voice = Male
+rate = 150
+volume = 100
+energy_threshold = 300
+
+[EMAIL]
+server = smtp.gmail.com
+port = 587
+username = 
+password = 
+```
+
+## Parameter reference
+
+### `[DEFAULT]` section
+
+<ParamField path="master" type="string" required>
+  Your name. Jarvis uses it in time-based greeting messages such as
+  `"Good Morning YourName"`. Set this to whatever you want Jarvis to call you.
+</ParamField>
+
+<ParamField path="search_engine" type="string" default="Google">
+  The default search engine used by the `search` command. Built-in options are
+  `Google`, `Bing`, `DuckDuckGo`, and `Youtube`. You can also supply a custom
+  domain name (e.g. `stackoverflow`) — Jarvis will attempt
+  `https://<value>.com?q=...` and fall back to Google if the domain is
+  unreachable.
+</ParamField>
+
+<ParamField path="debug" type="boolean" default="False">
+  When set to `True`, Jarvis replaces microphone input with a keyboard prompt
+  (`Command |--> `). Use this when you want to test commands without a working
+  microphone or audio drivers.
+</ParamField>
+
+<ParamField path="musicpath" type="string">
+  Absolute path to your music folder, including a trailing separator — for
+  example `C:\Users\You\Music\`. The `play music` command looks for files named
+  `music1.mp3` through `music4.mp3` inside this directory.
+</ParamField>
+
+<ParamField path="voice" type="string" default="Male">
+  TTS voice gender. Accepted values are `Male` and `Female`. `Male` maps to
+  `voices[0].id` and `Female` to `voices[1].id` in the pyttsx3 SAPI5 voice
+  list. You can change this at runtime with the `change voice to male/female`
+  command.
+</ParamField>
+
+<ParamField path="rate" type="integer" default="150">
+  Speech rate in words per minute passed to pyttsx3's `rate` property. Lower
+  values produce slower speech; higher values produce faster speech. Can be
+  changed at runtime with the `change rate to <number>` command.
+</ParamField>
+
+<ParamField path="volume" type="integer" default="100">
+  Speaker volume on a scale of `0` to `100`. Internally the value is divided by
+  100 before being passed to pyttsx3 (`engine.setProperty('volume', int(volume)/100)`).
+  Can be changed at runtime with the `change volume to <number>` command.
+</ParamField>
+
+<ParamField path="energy_threshold" type="integer" default="300">
+  Microphone energy threshold used by `speech_recognition`. Higher values
+  require louder audio before Jarvis starts recording; lower values make the
+  microphone more sensitive. Adjust this if Jarvis mis-triggers in a noisy
+  environment or fails to detect quiet speech.
+</ParamField>
+
+### `[EMAIL]` section
+
+<ParamField path="server" type="string" default="smtp.gmail.com">
+  SMTP server hostname for outgoing mail. The default is Gmail's SMTP server.
+  Change this if you use a different email provider (e.g. `smtp.office365.com`
+  for Outlook).
+</ParamField>
+
+<ParamField path="port" type="integer" default="587">
+  SMTP port. Port `587` is the standard port for STARTTLS. Most providers that
+  support STARTTLS use this port.
+</ParamField>
+
+<ParamField path="username" type="string">
+  The full email address used to authenticate with the SMTP server and as the
+  `From` address when sending mail (e.g. `you@gmail.com`).
+</ParamField>
+
+<ParamField path="password" type="string">
+  Password for the email account. For Gmail with two-factor authentication
+  enabled, use a 16-character **App Password** instead of your account password.
+  See [Email Setup](/configuration/email-setup) for details.
+</ParamField>
+
+## Placing config.ini
+
+The file must live in the **`src/` directory**, alongside the Python source files. All three Python modules (`Jarvis2_4windows.py`, `actions.py`, `commands.py`) call `config.read('config.ini')` with a relative path, so the working directory when you run Jarvis must also be `src/`.
+
+```bash
+# Correct — run from inside the src/ directory
+cd src
+python Jarvis2_4windows.py
+```
+
+<Note>
+  If you run the script from the project root instead of `src/`, Python will
+  look for `config.ini` in the root directory and not find it. Always `cd` into
+  `src/` first, or adjust the path in the source files.
+</Note>
+
+<Tip>
+  Set `debug = True` while you're getting started. Jarvis will prompt you for
+  commands at the terminal instead of listening through the microphone, so you
+  can verify that every setting is correct before switching to voice input.
+</Tip>

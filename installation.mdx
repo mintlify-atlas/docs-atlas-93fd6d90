@@ -1,0 +1,164 @@
+---
+title: "Install Desktop Assistant on Windows and Ubuntu"
+sidebarTitle: "Installation"
+description: "Step-by-step instructions to install Desktop Assistant (Jarvis) on Windows or Ubuntu, including dependencies, binary installers, and troubleshooting tips."
+---
+
+Desktop Assistant supports two platforms — **Windows** and **Ubuntu** — each with its own set of Python dependencies and a system-level audio requirement. Choose the tab below that matches your operating system, or skip straight to the [binary installers](#binary-installers) if you'd rather not set up a Python environment manually.
+
+<Note>
+  Desktop Assistant requires **Python 3.9** and a working **microphone**. All pip dependencies listed below are pinned to versions that have been validated against Python 3.9. Using a different Python version may cause compatibility issues, particularly with `PyAudio`.
+</Note>
+
+## Install from Source
+
+<Tabs>
+  <Tab title="Windows">
+    ### 1. Clone the repository
+
+    ```bash
+    git clone https://github.com/Harsha200105/DesktopAssistant.git
+    cd DesktopAssistant
+    ```
+
+    ### 2. Install Python dependencies
+
+    ```bash
+    pip install -r "Requirements&COC/requirements.txt"
+    ```
+
+    This installs the following packages:
+
+    | Package | Version | Purpose |
+    |---|---|---|
+    | `pygame` | 2.0.1 | Music playback via `pygame.mixer` |
+    | `SpeechRecognition` | 3.8.1 | Microphone capture and Google Speech Recognition |
+    | `wikipedia` | 1.4.0 | Fetches two-sentence Wikipedia summaries |
+    | `PyAudio` | 0.2.11 | Low-level audio I/O required by SpeechRecognition |
+    | `pyttsx3` | 2.90 | Offline text-to-speech (uses Windows SAPI5) |
+    | `tk` | — | Tkinter GUI support |
+
+    ### 3. Copy the configuration file
+
+    The Windows entry point requires a `config.ini` in the working directory you run the script from:
+
+    ```bash
+    copy "Requirements&COC\config.ini" src\config.ini
+    ```
+
+    Open `src\config.ini` and update at minimum the `master` key with your name:
+
+    ```ini
+    [DEFAULT]
+    master = YourName
+    search_engine = Google
+    debug = False
+    musicpath =
+    voice = Male
+    rate = 150
+    volume = 100
+    energy_threshold = 300
+
+    [EMAIL]
+    server = smtp.gmail.com
+    port = 587
+    username =
+    password =
+    ```
+  </Tab>
+
+  <Tab title="Ubuntu">
+    ### 1. Clone the repository
+
+    ```bash
+    git clone https://github.com/Harsha200105/DesktopAssistant.git
+    cd DesktopAssistant
+    ```
+
+    ### 2. Install system-level dependencies
+
+    eSpeak provides the TTS engine that `pyttsx3` uses on Linux. PortAudio is required to build `PyAudio`:
+
+    ```bash
+    sudo apt-get update
+    sudo apt-get install espeak
+    sudo apt install portaudio19-dev python3-pyaudio
+    ```
+
+    ### 3. Install Python dependencies
+
+    ```bash
+    pip install -r "Requirements&COC/ubuntu_requirements.txt"
+    ```
+
+    This installs the following packages:
+
+    | Package | Version | Purpose |
+    |---|---|---|
+    | `pygame` | 2.0.1 | Music playback via `pygame.mixer` |
+    | `SpeechRecognition` | 3.8.1 | Microphone capture and Google Speech Recognition |
+    | `wikipedia` | 1.4.0 | Fetches two-sentence Wikipedia summaries |
+    | `PyAudio` | 0.2.11 | Low-level audio I/O required by SpeechRecognition |
+    | `pyttsx3` | 2.90 | Offline text-to-speech (uses eSpeak on Ubuntu) |
+    | `setuptools` | 58.0.4 | Build tooling required by some dependencies |
+    | `pip` | 18 | Minimum pip version |
+    | `pep517` | — | Build backend support |
+
+    <Note>
+      The Ubuntu entry point (`Jarvis2.py`) does **not** require a `config.ini` file — all settings are hard-coded defaults. You only need `config.ini` if you run the Windows entry point (`Jarvis2_4windows.py`).
+    </Note>
+  </Tab>
+</Tabs>
+
+## Binary Installers
+
+If you prefer a pre-built package, download the installer for your platform directly:
+
+<CardGroup cols={2}>
+  <Card title="Windows Installer (.exe)" icon="windows" href="https://raw.githubusercontent.com/Harsha200105/DesktopAssistant/issue_44/bin/jarvis%20desktop%20assistant%20setup.exe">
+    Download the Windows setup executable. Run the installer and follow the on-screen instructions — no Python environment needed.
+  </Card>
+  <Card title="Ubuntu Package (.deb)" icon="linux" href="https://raw.githubusercontent.com/Harsha200105/DesktopAssistant/issue_44/bin/jarvis_deb.deb">
+    Download the Debian package. Install with `sudo dpkg -i jarvis_deb.deb` after downloading.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### PyAudio installation fails on Windows
+
+PyAudio depends on PortAudio, which is not bundled with the standard pip wheel on Windows. If `pip install PyAudio==0.2.11` throws a build error, use a pre-compiled wheel:
+
+```bash
+pip install pipwin
+pipwin install pyaudio
+```
+
+Alternatively, download the matching `.whl` from [Christoph Gohlke's Unofficial Windows Binaries](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio) and install it directly:
+
+```bash
+pip install PyAudio‑0.2.11‑cp39‑cp39‑win_amd64.whl
+```
+
+### PyAudio installation fails on Ubuntu
+
+Make sure `portaudio19-dev` is installed **before** running pip:
+
+```bash
+sudo apt install portaudio19-dev python3-pyaudio
+pip install PyAudio==0.2.11
+```
+
+### pyttsx3 produces no audio on Ubuntu
+
+Confirm eSpeak is installed and working:
+
+```bash
+espeak "hello"
+```
+
+If you hear nothing, re-run `sudo apt-get install espeak` and verify your system audio output is not muted.
+
+### SpeechRecognition returns no results
+
+`SpeechRecognition` uses the Google Speech Recognition API over the internet. Verify your network connection and check that your microphone is selected as the default input device in your OS sound settings. You can also lower the `energy_threshold` value in `config.ini` (default: `300`) if the assistant isn't picking up quieter speech.

@@ -1,0 +1,91 @@
+{
+  "projectType": "general",
+  "projectName": "Desktop Assistant (Jarvis)",
+  "projectDescription": "A voice-activated virtual desktop assistant written in Python that responds to spoken commands to open websites, search the web, send emails, play music, and more.",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#93C5FD",
+  "darkColor": "#1D4ED8",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/config-file",
+              "configuration/voice-settings",
+              "configuration/email-setup"
+            ]
+          },
+          {
+            "group": "Voice Commands",
+            "pages": [
+              "commands/overview",
+              "commands/web-navigation",
+              "commands/information",
+              "commands/music",
+              "commands/email",
+              "commands/system"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing/guidelines",
+              "contributing/development-setup"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Voice-activated command recognition using Google Speech Recognition",
+    "Text-to-speech responses via pyttsx3",
+    "Open popular websites by voice (Google, YouTube, Wikipedia, Amazon, GitHub)",
+    "Web search via configurable search engine (Google, Bing, DuckDuckGo, YouTube)",
+    "Wikipedia lookups with spoken summaries",
+    "Send emails via SMTP using voice dictation",
+    "Music playback control (play, pause, unpause, stop) via pygame",
+    "Adjustable voice settings: gender, speech rate, volume",
+    "Tkinter GUI with chat-style response display",
+    "Cross-platform support: Windows and Ubuntu",
+    "Debug mode with text input instead of microphone",
+    "Configurable via config.ini file"
+  ],
+  "publicApiSurface": [
+    "command_wikipedia(debug, query)",
+    "command_whatsup()",
+    "command_open(query, popular_websites, debug, search_engine, take_command)",
+    "command_search(query, search_engine)",
+    "command_mail(take_command)",
+    "command_nothing()",
+    "command_hello()",
+    "command_bye()",
+    "command_play_music()",
+    "command_pause_music()",
+    "command_stop_music()",
+    "command_unpause_music()",
+    "speak(text)",
+    "wish_me(master)",
+    "change_rate(query, take_command)",
+    "change_voice(query, take_command)",
+    "change_volume(query, take_command)",
+    "search_engine_selector(config)",
+    "open_url(url)",
+    "search(search_query, search_engine)",
+    "set_gui_speak(command)",
+    "gui.set_speak_command(command)",
+    "gui.mainloop()"
+  ]
+}

@@ -1,0 +1,95 @@
+---
+title: "Control Music Playback with Voice Commands"
+sidebarTitle: "Music"
+description: "Play, pause, resume, and stop local MP3 tracks using voice commands — powered by the pygame mixer and a configurable music folder path."
+---
+
+Jarvis controls local MP3 playback through the `pygame.mixer` module. You can start, pause, resume, and stop music entirely by voice, with no need to touch the keyboard. Playback picks a track at random from your music folder each time you say "play music", so the experience stays varied across sessions.
+
+## Prerequisites
+
+Before the music commands work you must configure the path to your music folder in `config.ini`. The folder must contain MP3 files named `music1.mp3`, `music2.mp3`, `music3.mp3`, and `music4.mp3`.
+
+```ini
+[DEFAULT]
+musicpath = /home/yourname/Music/
+```
+
+<Warning>
+  The `musicpath` value must be an **absolute path** ending with a trailing slash (`/`). Relative paths and paths without a trailing slash will cause the file loader to construct an invalid filename and raise an exception.
+</Warning>
+
+## Commands
+
+### Play music
+
+Say **"play music"** to load and play a random track from your music folder.
+
+```python
+def command_play_music():
+    try:
+        music_folder = config['DEFAULT']['musicPath']
+        music = ("music1", "music2", "music3", "music4")
+        random_music = music_folder + random.choice(music) + ".mp3"
+        speak("Playing your request")
+        mixer.music.load(random_music)
+        mixer.music.play()
+    except Exception as e:
+        speak(e)
+```
+
+`random.choice(music)` picks one of the four track names, the folder path and `.mp3` extension are concatenated, and `mixer.music.load()` + `mixer.music.play()` start playback. If anything goes wrong (file not found, bad path, corrupt MP3), Jarvis speaks the exception message aloud.
+
+### Pause music
+
+Say **"pause music"** to pause the currently playing track without losing your position.
+
+```python
+def command_pause_music():
+    mixer.music.pause()
+```
+
+### Unpause
+
+Say **"unpause"** to resume playback from where it was paused.
+
+```python
+def command_unpause_music():
+    mixer.music.unpause()
+```
+
+### Stop music
+
+Say **"stop music"** to stop playback entirely. Unlike pause, stopping resets the track position — playing again will pick a new random track.
+
+```python
+def command_stop_music():
+    mixer.music.stop()
+```
+
+<Note>
+  "stop music" and "stop" are different commands. Saying just **"stop"** triggers `command_nothing()`, which exits the entire program. Make sure to say the full phrase **"stop music"** when you only want to end playback.
+</Note>
+
+## Music file naming convention
+
+The `command_play_music()` function looks for files using the tuple `("music1", "music2", "music3", "music4")`. Your files **must** be named exactly:
+
+```
+music1.mp3
+music2.mp3
+music3.mp3
+music4.mp3
+```
+
+All four files must be present in the configured folder. If any file is missing, `mixer.music.load()` will raise a `FileNotFoundError` and Jarvis will speak the error.
+
+<Tip>
+  To add more tracks, extend the `music` tuple inside `command_play_music()` in `commands.py`. For example, to add a fifth track, rename your file `music5.mp3`, place it in the music folder, and change the tuple to:
+
+  ```python
+  music = ("music1", "music2", "music3", "music4", "music5")
+  ```
+
+  No other changes are needed — `random.choice()` will automatically include the new entry.
+</Tip>

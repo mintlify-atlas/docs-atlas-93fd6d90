@@ -1,0 +1,106 @@
+---
+title: "Voice Commands Reference: All Supported Commands"
+sidebarTitle: "Overview"
+description: "Complete reference for every voice command Jarvis understands — from web navigation and Wikipedia lookups to music playback and email."
+---
+
+Jarvis listens for your voice through the microphone, converts speech to text using Google's Speech Recognition API, matches the transcribed text against known command phrases, and executes the corresponding action. Every command follows the same loop: speak a phrase → Jarvis recognizes it → the action runs → Jarvis prompts **"Next Command Sir!"** so you can issue another.
+
+## How the assistant listens
+
+When you speak, Jarvis uses the `speech_recognition` library to capture audio and send it to Google's Speech API. The recognizer is tuned with a short pause threshold to feel responsive:
+
+```python
+def take_command():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening....")
+        r.pause_threshold = 0.5
+        r.energy_threshold = int(config['DEFAULT']['energy_threshold'])
+        audio = r.listen(source)
+
+    query = " "
+    try:
+        print("Recognizing....")
+        query = r.recognize_google(audio, language="en-in")
+        print("user said: " + query)
+
+    except sr.UnknownValueError:
+        speak("Sorry Could You please try again")
+
+    except Exception as e:
+        print(e)
+
+    return query
+```
+
+| Parameter | Value | Notes |
+|---|---|---|
+| `pause_threshold` | `0.5` seconds | Silence needed before Jarvis stops recording |
+| `energy_threshold` | `300` (default) | Microphone sensitivity — raise if Jarvis misses commands; lower if it never triggers |
+| `language` | `en-in` | English (India) locale passed to `r.recognize_google()` |
+
+The `energy_threshold` value is read from `config.ini` so you can tune it without editing source code.
+
+<Note>
+  If Jarvis frequently says "Sorry, could you please try again?" without you even speaking, your microphone's background noise level exceeds `energy_threshold`. Increase the value in `config.ini` under `[DEFAULT]` → `energy_threshold`.
+</Note>
+
+## Command categories
+
+<CardGroup cols={2}>
+  <Card title="Web Navigation" icon="globe" href="/commands/web-navigation">
+    Open websites by name and search the web with configurable search engines including Google, Bing, DuckDuckGo, and YouTube.
+  </Card>
+  <Card title="Information" icon="book-open" href="/commands/information">
+    Get Wikipedia summaries, ask for the current date or time, and receive friendly conversational responses.
+  </Card>
+  <Card title="Music" icon="music" href="/commands/music">
+    Play, pause, resume, and stop local MP3 music using pygame mixer — all by voice.
+  </Card>
+  <Card title="Email" icon="envelope" href="/commands/email">
+    Dictate and send emails via SMTP by speaking the recipient address and message body.
+  </Card>
+  <Card title="System Commands" icon="terminal" href="/commands/system">
+    Greet Jarvis, change voice gender, speech rate, volume, and exit the assistant gracefully.
+  </Card>
+</CardGroup>
+
+## Quick reference
+
+The table below lists every recognized phrase and what it does. Phrases are matched case-insensitively on the lowercased transcript.
+
+| Phrase | Action |
+|---|---|
+| `hello` | Greet the user — Jarvis replies "Hello Sir" |
+| `what's up` / `how are you` | Random friendly response from a preset list |
+| `open [website]` | Open a built-in website (Google, YouTube, Wikipedia, Amazon, GitHub) or offer to search for an unknown site |
+| `search for [query]` | Run a web search using the configured search engine |
+| `wikipedia [topic]` | Fetch and speak a 2-sentence Wikipedia summary of the topic |
+| `time` | Speak the current time in 12-hour format (e.g. "02 45 PM") |
+| `date` | Speak the current date (e.g. "Monday, June 09, 2025") |
+| `mail` / `email` | Start the email flow — Jarvis asks for recipient and message body |
+| `play music` | Load and play a random MP3 from your configured music folder |
+| `pause music` | Pause the currently playing track |
+| `unpause` | Resume a paused track |
+| `stop music` | Stop music playback entirely |
+| `change voice to male` | Switch TTS voice to the first system voice (male) |
+| `change voice to female` | Switch TTS voice to the second system voice (female) |
+| `change rate to [number]` | Set the TTS speech rate (e.g. "change rate to 150") |
+| `change volume to [number]` | Set the TTS volume 0–100 (e.g. "change volume to 80") |
+| `nothing` / `abort` / `stop` | Say goodbye and exit the program |
+| `bye` | Say goodbye and exit the program |
+
+## The "Next Command Sir" prompt
+
+After every command executes, Jarvis always speaks **"Next Command! Sir!"** — this is the signal that the assistant is ready and listening again. The prompt is unconditional: it fires at the end of `execute_the_command_said_by_user()` regardless of which branch ran.
+
+```python
+    # ... command logic above ...
+
+    speak("Next Command! Sir!")
+```
+
+<Tip>
+  In **debug mode** (`debug = True` in `config.ini`), Jarvis reads commands from `input()` at the terminal instead of the microphone. This is useful for testing without a microphone or in noisy environments.
+</Tip>

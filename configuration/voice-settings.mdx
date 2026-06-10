@@ -1,0 +1,156 @@
+---
+title: "Adjust Voice, Rate, and Volume Settings"
+sidebarTitle: "Voice Settings"
+description: "Change Jarvis's TTS voice gender, speech rate, and speaker volume at runtime using voice commands, with optional persistence to config.ini."
+---
+
+Jarvis exposes three live voice-configuration commands that take effect immediately without restarting the assistant. Each change is applied to the running pyttsx3 engine straight away, and you are then asked whether you want to **persist** the new value to `config.ini` so it survives the next restart. All three handlers live in `actions.py` and are wired up in `Jarvis2_4windows.py` via the `elif "change rate" in query` / `elif "change voice" in query` / `elif "change volume" in query` branches.
+
+---
+
+## Voice Gender
+
+**Say:** `"change voice to male"` or `"change voice to female"`
+
+Jarvis splits the command on the word `"to"` to extract the target gender and then calls `engine.setProperty('voice', ...)` with the matching SAPI5 voice ID:
+
+```python
+def change_voice(query, take_command):
+    try:
+        voice = query.split('to')[-1]
+        if voice == "male":
+            engine.setProperty('voice', voices[0].id)
+            speak("¿Do you want to keep this config?")
+            if take_command() == "yes":
+                config['DEFAULT']['voice'] = 'Male'
+                with open('config.ini', 'w') as configfile:
+                    config.write(configfile)
+            else:
+                pass
+
+        elif voice == "female":
+            engine.setProperty('voice', voices[1].id)
+            speak("¿Do you want to keep this config?")
+            answer = take_command()
+            print(answer)
+            if answer == "yes":
+                config['DEFAULT']['voice'] = 'Female'
+                with open('config.ini', 'w') as configfile:
+                    config.write(configfile)
+            else:
+                pass
+        else:
+            speak("Invalid value. Please try again.")
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+`voices[0]` and `voices[1]` are the first two SAPI5 voices returned by
+`engine.getProperty("voices")`. On a standard Windows installation `voices[0]`
+is **Microsoft David** (male) and `voices[1]` is **Microsoft Zira** (female),
+though the exact voices available depend on your Windows language packs.
+
+After Jarvis confirms the change, say **"yes"** to write the new value to
+`config.ini`, or say anything else to keep the change only for the current
+session.
+
+---
+
+## Speech Rate
+
+**Say:** `"change rate to 200"` *(replace 200 with your preferred value)*
+
+The rate is extracted from the command string and passed directly to pyttsx3 as words per minute:
+
+```python
+def change_rate(query, take_command):
+    try:
+        rate = query.split('to')[-1]
+        engine.setProperty('rate', int(rate))
+        speak("¿Do you want to keep this config?")
+        answer = take_command()
+        if answer == "yes":
+            config['DEFAULT']['rate'] = rate
+            with open('config.ini', 'w') as configfile:
+                config.write(configfile)
+        else:
+            pass
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+The default rate defined in `config.ini` is **150 words per minute**. Typical
+comfortable listening ranges are 120–180 wpm; anything above 250 wpm can become
+difficult to follow. If you supply a non-integer value, the `except` block fires
+and Jarvis asks you to try again.
+
+---
+
+## Volume
+
+**Say:** `"change volume to 80"` *(replace 80 with a value from 0 to 100)*
+
+Volume is specified as an integer between `0` and `100`. Internally it is
+divided by 100 before being passed to pyttsx3, which expects a float in the
+range `0.0`–`1.0`:
+
+```python
+def change_volume(query, take_command):
+    try:
+        volume = query.split('to')[-1]
+        engine.setProperty('volume', int(volume)/100)
+        speak("¿Do you want to keep this config?")
+        answer = take_command()
+        if answer == "yes":
+            config['DEFAULT']['volume'] = volume
+            with open('config.ini', 'w') as configfile:
+                config.write(configfile)
+        else:
+            pass
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+The default volume in `config.ini` is **100** (full volume). Setting it to `0`
+will silence Jarvis entirely — remember you can still use `debug = True` to
+interact via the keyboard if that happens.
+
+<Note>
+  Whenever Jarvis asks *"¿Do you want to keep this config?"*, responding with
+  **"yes"** rewrites the entire `config.ini` file through Python's
+  `configparser`. Any manual formatting or comments you added to the file will
+  be removed by the rewrite, because `configparser` does not preserve them.
+  Keep a backup copy of your `config.ini` if you have custom comments in it.
+</Note>
+
+---
+
+## Startup settings
+
+At module load time `actions.py` reads `config.ini` and applies all three voice
+settings to the pyttsx3 engine before the first command is processed:
+
+```python
+engine = pyttsx3.init("sapi5")
+voices = engine.getProperty("voices")
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+if config['DEFAULT']['voice'] == 'Male':
+    engine.setProperty('voice', voices[0].id)
+else:
+    engine.setProperty('voice', voices[1].id)
+
+try:
+    engine.setProperty('rate', int(config['DEFAULT']['rate']))
+    engine.setProperty('volume', int(config['DEFAULT']['volume'])/100)
+
+except Exception:
+    speak("Bad config. Setting up default values")
+```
+
+If either `rate` or `volume` contains a non-integer value when the module is
+imported, Jarvis announces `"Bad config. Setting up default values"` and
+continues with pyttsx3's built-in defaults rather than crashing. Fix the values
+in `config.ini` and restart to resolve the warning.

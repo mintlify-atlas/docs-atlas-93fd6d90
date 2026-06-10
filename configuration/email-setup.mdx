@@ -1,0 +1,151 @@
+---
+title: "Set Up Email for Desktop Assistant"
+sidebarTitle: "Email Setup"
+description: "Configure Jarvis to send emails by voice using Gmail SMTP — covers App Passwords, config.ini credentials, and the full SMTP code flow."
+---
+
+Jarvis can send an email entirely by voice. Say `"mail"` or include `"email"` in your command, and Jarvis will prompt you to speak the recipient address and then dictate the message body. Under the hood, `commands.py` opens an SMTP connection to the server configured in `config.ini`, authenticates, and dispatches the message — all without touching a keyboard.
+
+---
+
+## Gmail setup
+
+<Steps>
+
+### Enable account access for Jarvis
+
+Gmail blocks plain-username/password logins from third-party apps by default.
+Choose **one** of the following options based on whether you have two-factor
+authentication enabled:
+
+- **Without 2FA** — Log in to your Google account, go to
+  [myaccount.google.com/lesssecureapps](https://myaccount.google.com/lesssecureapps),
+  and turn on *Allow less secure apps*.
+- **With 2FA (recommended)** — Generate a 16-character **App Password** at
+  [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+  Select *Mail* as the app and *Windows Computer* as the device. Copy the
+  generated password — you will use it in the next step instead of your real
+  account password.
+
+### Fill in the `[EMAIL]` section of config.ini
+
+Open `src/config.ini` and complete the `[EMAIL]` block:
+
+```ini
+[EMAIL]
+server = smtp.gmail.com
+port = 587
+username = you@gmail.com
+password = yourpassword
+```
+
+Replace `you@gmail.com` with your Gmail address and `yourpassword` with either
+your account password (less-secure-apps path) or the 16-character App Password
+(2FA path).
+
+### Verify your microphone is working
+
+The `command_mail` function calls `take_command()` twice — once to capture the
+recipient and once to capture the message body. Both calls go through the
+speech recogniser, so a working microphone is required unless you are running
+with `debug = True`.
+
+<Tip>
+  Set `debug = True` in `config.ini` before your first test. Jarvis will prompt
+  you at the terminal for the recipient and message body, letting you confirm
+  that the SMTP credentials are correct without needing to speak.
+</Tip>
+
+</Steps>
+
+---
+
+## Voice interaction flow
+
+Once setup is complete, triggering the email command works like this:
+
+1. Say a phrase that includes `"mail"` — for example **"send a mail"** or
+   **"email"**.
+2. Jarvis replies *"Who is the recipient?"* — speak the recipient's full email
+   address.
+3. Jarvis replies *"What should I say?"* — dictate the message body.
+4. Jarvis sends the email and confirms *"Email sent!"*, or says *"I am unable to
+   send your message at this moment!"* if an error occurred.
+
+---
+
+## How the SMTP code works
+
+The `command_mail` function in `commands.py` handles the entire flow:
+
+```python
+def command_mail(take_command):
+    speak("Who is the recipient? ")
+    recipient = take_command()
+
+    try:
+        speak("What should I say? ")
+        content = take_command()
+
+        email = config['EMAIL']
+        server = smtplib.SMTP(email['server'], email['port'])
+        server.ehlo()
+        server.starttls()
+        server.login(email['username'], email['password'])
+        server.sendmail(email['username'], recipient, content)
+        server.close()
+        speak("Email sent!")
+    except Exception:
+        speak("Sorry Sir!")
+        speak("I am unable to send your message at this moment!")
+```
+
+The connection sequence is:
+
+| Step | Method | Purpose |
+|---|---|---|
+| 1 | `smtplib.SMTP(server, port)` | Opens a plain-text connection to port 587 |
+| 2 | `server.ehlo()` | Identifies the client to the server (ESMTP handshake) |
+| 3 | `server.starttls()` | Upgrades the connection to TLS encryption |
+| 4 | `server.login(username, password)` | Authenticates with your credentials |
+| 5 | `server.sendmail(from, to, content)` | Sends the email (both `From` and `To` use the configured username) |
+| 6 | `server.close()` | Closes the connection cleanly |
+
+The `config['EMAIL']` dictionary is populated at module import time via:
+
+```python
+config = configparser.ConfigParser()
+config.read('config.ini')
+```
+
+---
+
+## Security considerations
+
+<Warning>
+  Your email password is stored in **plain text** inside `config.ini`. Anyone
+  who can read that file can access your email account.
+
+  - Use a dedicated **App Password** (Gmail) rather than your main account
+    password — you can revoke it at any time without changing your real
+    password.
+  - Do not commit `config.ini` to a public git repository. Add it to your
+    `.gitignore` file:
+
+    ```bash
+    echo "src/config.ini" >> .gitignore
+    ```
+
+  - Restrict the file permissions so only your user account can read it:
+
+    ```bash
+    icacls src\config.ini /inheritance:r /grant:r "%USERNAME%:R"
+    ```
+</Warning>
+
+<Note>
+  The recipient address is captured directly from Google's speech recognition
+  output. Addresses that contain unusual punctuation (dots, plus signs,
+  subdomains) may not be recognised accurately. If the recognised text looks
+  wrong in the terminal, use `debug = True` mode and type the address instead.
+</Note>

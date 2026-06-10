@@ -1,0 +1,78 @@
+---
+title: "Desktop Assistant (Jarvis): What It Is and How It Works"
+sidebarTitle: "Introduction"
+description: "Desktop Assistant (Jarvis) is an open-source, voice-activated Python assistant with a Tkinter GUI that runs on Windows and Ubuntu."
+---
+
+Desktop Assistant — known as **Jarvis** — is an open-source virtual assistant written in Python. It listens for your voice, carries out tasks on your computer, answers questions, searches the web, sends emails, plays music, and speaks responses back to you using text-to-speech. Whether you prefer a graphical interface or just your microphone, Jarvis is designed to make everyday desktop tasks faster and more hands-free.
+
+## What Jarvis Can Do
+
+Jarvis combines several capabilities into a single conversational interface:
+
+- **Voice recognition** — captures audio from your microphone and transcribes it using the Google Speech Recognition engine via the `SpeechRecognition` library.
+- **Text-to-speech (TTS)** — responds out loud using `pyttsx3`, an offline TTS engine that works with SAPI5 on Windows and eSpeak on Ubuntu.
+- **Web browsing** — opens popular websites (Google, YouTube, Wikipedia, Amazon, GitHub) and fires off searches on your configured search engine.
+- **Wikipedia lookups** — fetches two-sentence summaries directly from Wikipedia.
+- **Email** — composes and sends emails via SMTP using credentials stored in `config.ini`.
+- **Music playback** — plays and controls MP3 files from a configured folder using `pygame.mixer`.
+- **System time and date** — announces the current time and date on request.
+- **Graphical interface** — displays a scrollable chat log and a **Speak** button inside a Tkinter window so you can follow the conversation visually.
+
+## Architecture Overview
+
+The project's source lives entirely in the `src/` directory and is split into five modules:
+
+| File | Purpose |
+|---|---|
+| `Jarvis2.py` | **Ubuntu entry point.** Self-contained: embeds TTS, speech recognition, and command dispatch in one file. |
+| `Jarvis2_4windows.py` | **Windows entry point.** Reads `config.ini` at startup, then delegates to `actions.py` and `commands.py`. |
+| `actions.py` | Shared helpers — `speak()`, `wish_me()`, `search_engine_selector()`, and voice-settings mutators (`change_rate`, `change_voice`, `change_volume`). |
+| `commands.py` | Individual command handlers (`command_wikipedia`, `command_open`, `command_search`, `command_mail`, `command_play_music`, etc.). |
+| `gui.py` | Tkinter window definition — the 700×500 `root` window, scrollable `Listbox` chat log, and the **Speak** button. |
+
+The Windows entry point (`Jarvis2_4windows.py`) checks for `config.ini` before doing anything else. If the file is missing it prints an error and exits. The Ubuntu entry point (`Jarvis2.py`) is configuration-free and runs directly.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Offline Text-to-Speech" icon="volume-high">
+    Uses `pyttsx3` for TTS — no internet connection required to speak responses. Voice, rate (default 150 wpm), and volume are all adjustable at runtime or via `config.ini`.
+  </Card>
+  <Card title="Google Speech Recognition" icon="microphone">
+    Captures audio with `PyAudio` and transcribes it through the Google Speech Recognition API. Energy threshold (default 300) and pause threshold (0.5 s) are tunable.
+  </Card>
+  <Card title="Configurable Search Engine" icon="magnifying-glass">
+    Pick Google, Bing, DuckDuckGo, or YouTube as your default search engine in `config.ini`. Any other value is validated as a live URL before falling back to Google.
+  </Card>
+  <Card title="Debug / Type Mode" icon="terminal">
+    Set `debug = True` in `config.ini` to type commands at the terminal instead of speaking — useful for testing without a microphone.
+  </Card>
+  <Card title="Music Playback" icon="music">
+    Plays, pauses, unpauses, and stops MP3 files via `pygame.mixer`. Point `musicpath` in `config.ini` to your music folder.
+  </Card>
+  <Card title="Cross-Platform" icon="laptop">
+    Runs on Windows (with SAPI5) and Ubuntu (with eSpeak). Separate entry points and requirement files keep platform-specific dependencies isolated.
+  </Card>
+</CardGroup>
+
+## System Requirements
+
+| Requirement | Details |
+|---|---|
+| **Python** | 3.9 or later (3.9 recommended — all dependencies are pinned against it) |
+| **Microphone** | Required for voice input; can be bypassed with `debug = True` |
+| **Internet** | Required for Google Speech Recognition and Wikipedia lookups |
+| **OS** | Windows 10+ or Ubuntu (tested with espeak installed) |
+| **Ubuntu extra** | `espeak` system package (`sudo apt-get install espeak`) and `portaudio19-dev` for PyAudio |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Python dependencies on Windows or Ubuntu, or download the pre-built binary installer.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo, drop in your `config.ini`, and give Jarvis your first voice command in under five minutes.
+  </Card>
+</CardGroup>

@@ -1,0 +1,122 @@
+---
+title: "Open Websites and Search the Web by Voice"
+sidebarTitle: "Web Navigation"
+description: "Use voice commands to open built-in websites or run web searches with Google, Bing, DuckDuckGo, or YouTube — all configurable via config.ini."
+---
+
+Jarvis can launch websites directly in your browser and perform web searches entirely by voice. Both capabilities are backed by Python's `webbrowser` module, which opens URLs in your default browser. The search engine used for queries is read from `config.ini`, so you can switch between Google, Bing, DuckDuckGo, and YouTube without touching the source code.
+
+## Opening websites
+
+Say **"open [website name]"** to navigate to a site. Jarvis strips the word "open" from your query, normalizes the remainder to lowercase, and looks it up in the `popular_websites` dictionary.
+
+The built-in websites are defined in `Jarvis2_4windows.py`:
+
+```python
+popular_websites = {
+    "google":    "https://www.google.com",
+    "youtube":   "https://www.youtube.com",
+    "wikipedia": "https://www.wikipedia.org",
+    "amazon":    "https://www.amazon.com",
+    "github":    "https://www.github.com",
+}
+```
+
+If the spoken name is not found in the dictionary, Jarvis tells you it doesn't recognize the site and immediately offers to search for it instead:
+
+```python
+def command_open(query, popular_websites, debug, search_engine, take_command):
+    website = query.replace("open", "").strip().lower()
+    try:
+        open_url(popular_websites[website])
+    except KeyError:  # If the website is unknown
+        if debug == "True":
+            print(f"Unknown website: {website}")
+        else:
+            pass
+        speak(f"Sorry, i don't know the website {website}")
+        speak(f"¿Do you want me to search {website} in the web?")
+        if take_command() == "yes":
+            search(website, search_engine)
+        else:
+            pass
+```
+
+Say **"yes"** after the offer and Jarvis will run a search for that site name using your configured search engine.
+
+## Web search
+
+Say **"search for [query]"** to open a search results page. Jarvis extracts the search terms by splitting on the word `"for"` and taking the last segment:
+
+```python
+def command_search(query, search_engine):
+    search_query = query.split("for")[-1]
+    search(search_query, search_engine)
+```
+
+The `search()` helper in `actions.py` appends `/search?q=` to the base URL of whichever engine is configured:
+
+```python
+def search(search_query, search_engine):
+    open_url(f"{search_engine}/search?q={search_query}")
+```
+
+## Configurable search engine
+
+The search engine base URL is resolved once at startup by `search_engine_selector()` in `actions.py`. It reads the `search_engine` key from `config.ini` and returns the matching base URL:
+
+```python
+def search_engine_selector(config):
+    if config['DEFAULT']['search_engine'] == 'Google':
+        return "https://www.google.com"
+    elif config['DEFAULT']['search_engine'] == 'Bing':
+        return "https://www.bing.com"
+    elif config['DEFAULT']['search_engine'] == 'DuckDuckGo':
+        return "https://www.duckduckgo.com"
+    elif config['DEFAULT']['search_engine'] == 'Youtube':
+        return "https://www.youtube.com"
+    else:
+        # If none of the defaults are selected, tries to fetch the custom
+        # domain to validate it, then uses it. Falls back to Google on failure.
+        try:
+            if requests.get(
+                f"https://{config['DEFAULT']['search_engine'].lower()}.com",
+                params={'q': 'example'}
+            ).status_code == 200:
+                return (
+                    f"https://{config['DEFAULT']['search_engine'].lower()}.com"
+                )
+            else:
+                return "https://www.google.com"
+        except Exception as e:
+            print(e)
+            return "https://www.google.com"
+```
+
+To change the engine, edit your `config.ini`:
+
+```ini
+[DEFAULT]
+search_engine = Google
+```
+
+Supported built-in values are `Google`, `Bing`, `DuckDuckGo`, and `Youtube`. Any other value is treated as a custom domain name — Jarvis sends a test HTTP GET request to `https://<value>.com` and uses it if the server responds with HTTP 200; otherwise it silently falls back to Google.
+
+<Note>
+  Custom domain validation requires an active internet connection at startup. If the request fails (network error, non-200 response), Jarvis defaults to Google without showing an error to the user.
+</Note>
+
+## How URLs are opened
+
+Both `open_url()` calls in `actions.py` and `Jarvis2.py` use `webbrowser.open()` to launch the URL in whatever your operating system considers the default browser:
+
+```python
+def open_url(url):
+    webbrowser.open(url)
+    chrome_path = r"open -a /Applications/Google\ Chrome.app %s"
+    webbrowser.get(chrome_path).open(url)
+```
+
+<Tip>
+  To add new websites, open `Jarvis2_4windows.py` and extend the `popular_websites` dictionary with a lowercase key and the full URL as the value — for example `"reddit": "https://www.reddit.com"`. No other changes are required.
+</Tip>

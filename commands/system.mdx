@@ -1,0 +1,185 @@
+---
+title: "System Commands: Greet, Exit, and Control Jarvis"
+sidebarTitle: "System"
+description: "Control Jarvis itself — greet the assistant, change voice gender, speech rate, and volume, or exit gracefully with a voice command."
+---
+
+System commands let you interact with Jarvis as a program rather than as a task executor. You can greet the assistant, change how it sounds, or shut it down — all by voice. These commands are dispatched first in `execute_the_command_said_by_user()`, meaning they are always available regardless of what other command logic is active.
+
+## Greeting
+
+### "hello"
+
+Say **"hello"** to receive a greeting from Jarvis.
+
+```python
+def command_hello():
+    speak("Hello Sir")
+```
+
+### Startup greeting with `wish_me()`
+
+When Jarvis first launches it greets you based on the current time of day. The `wish_me()` function in `actions.py` checks `datetime.datetime.now().hour` and picks the appropriate salutation:
+
+```python
+def wish_me(master):
+    hour = datetime.datetime.now().hour
+
+    if hour >= 0 and hour < 12:
+        speak("Good Morning" + master)
+
+    elif hour >= 12 and hour < 18:
+        speak("Good Afternoon" + master)
+
+    else:
+        speak("Good Evening" + master)
+```
+
+`master` is the name configured in `config.ini` under `[DEFAULT]` → `master`. The greeting is spoken immediately after *"Initializing Jarvis…."* every time the program starts.
+
+## Casual conversation
+
+### "what's up" / "how are you"
+
+Say either phrase for a random friendly response:
+
+```python
+def command_whatsup():
+    st_msgs = [
+        "Just doing my thing!",
+        "I am fine!",
+        "Nice!",
+        "I am nice and full of energy",
+    ]
+    speak(random.choice(st_msgs))
+```
+
+## Exiting
+
+### "bye"
+
+Say **"bye"** for a polite farewell before the program terminates.
+
+```python
+def command_bye():
+    speak("Bye Sir, have a good day.")
+    sys.exit()
+```
+
+### "nothing" / "abort" / "stop"
+
+All three phrases trigger the same function. Use them when you want to cancel the current session or when you have no more commands to give:
+
+```python
+def command_nothing():
+    speak("okay")
+    speak("Bye Sir, have a good day.")
+    sys.exit()
+```
+
+<Warning>
+  Saying **"stop"** triggers `command_nothing()` and **exits the program**. If you only want to stop music playback, say **"stop music"** instead. The word "stop" alone is reserved as a program exit command.
+</Warning>
+
+## Voice and speech settings
+
+These commands let you change how Jarvis sounds at runtime. After asking "Do you want to keep this config?", Jarvis listens for a **"yes"** reply — if given, the new value is written back to `config.ini` so it persists across restarts.
+
+### Change voice gender
+
+Say **"change voice to male"** or **"change voice to female"**:
+
+```python
+def change_voice(query, take_command):
+    try:
+        voice = query.split('to')[-1]
+        if voice == "male":
+            engine.setProperty('voice', voices[0].id)
+            speak("¿Do you want to keep this config?")
+            if take_command() == "yes":
+                config['DEFAULT']['voice'] = 'Male'
+                with open('config.ini', 'w') as configfile:
+                    config.write(configfile)
+
+        elif voice == "female":
+            engine.setProperty('voice', voices[1].id)
+            speak("¿Do you want to keep this config?")
+            answer = take_command()
+            if answer == "yes":
+                config['DEFAULT']['voice'] = 'Female'
+                with open('config.ini', 'w') as configfile:
+                    config.write(configfile)
+        else:
+            speak("Invalid value. Please try again.")
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+### Change speech rate
+
+Say **"change rate to [number]"** (e.g. *"change rate to 150"*). The default rate is `150` words per minute:
+
+```python
+def change_rate(query, take_command):
+    try:
+        rate = query.split('to')[-1]
+        engine.setProperty('rate', int(rate))
+        speak("¿Do you want to keep this config?")
+        answer = take_command()
+        if answer == "yes":
+            config['DEFAULT']['rate'] = rate
+            with open('config.ini', 'w') as configfile:
+                config.write(configfile)
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+### Change volume
+
+Say **"change volume to [number]"** where the number is a percentage from 0 to 100 (e.g. *"change volume to 80"*). The value is divided by 100 before being passed to `pyttsx3`, which expects a float between 0.0 and 1.0:
+
+```python
+def change_volume(query, take_command):
+    try:
+        volume = query.split('to')[-1]
+        engine.setProperty('volume', int(volume)/100)
+        speak("¿Do you want to keep this config?")
+        answer = take_command()
+        if answer == "yes":
+            config['DEFAULT']['volume'] = volume
+            with open('config.ini', 'w') as configfile:
+                config.write(configfile)
+    except Exception:
+        speak("Invalid value. Please try again.")
+```
+
+## The "Next Command Sir" prompt
+
+After every command — including system commands — Jarvis says **"Next Command! Sir!"**. This is an unconditional call at the end of `execute_the_command_said_by_user()` that signals the assistant is ready for input again:
+
+```python
+    # ... all command branches above ...
+
+    speak("Next Command! Sir!")
+```
+
+## Debug mode
+
+When `debug = True` in `config.ini`, Jarvis replaces the microphone with a terminal prompt. Instead of listening through your microphone, it calls `input()` and waits for you to type a command:
+
+```python
+if debug == "True":
+    def take_command():
+        return input("Command |--> ")
+```
+
+This is useful for rapid testing, running in environments without a microphone, or developing new commands without speaking every time.
+
+```ini
+[DEFAULT]
+debug = True
+```
+
+<Note>
+  Debug mode also enables `print()` output for intermediate results such as Wikipedia summaries and unknown website names. Set `debug = False` for normal voice-only operation.
+</Note>

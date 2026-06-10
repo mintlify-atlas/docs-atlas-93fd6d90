@@ -1,0 +1,76 @@
+---
+title: "Wikipedia Lookups, Date, and Time by Voice"
+sidebarTitle: "Information"
+description: "Ask Jarvis for Wikipedia summaries, the current date and time, or just say how are you — all retrieved and spoken back in real time."
+---
+
+Jarvis handles a set of conversational and informational commands out of the box — look up any topic on Wikipedia, hear today's date and time spoken aloud, or get a friendly response when you just want to check in. Wikipedia lookups and speech recognition both require an active internet connection; date, time, and casual responses work fully offline.
+
+## Wikipedia lookups
+
+Say **"wikipedia [topic]"** to get a spoken summary of any article. Jarvis strips the trigger word from your query, fetches the first two sentences of the Wikipedia article, and speaks them back.
+
+```python
+def command_wikipedia(debug, query):
+    speak("Searching wikipedia....")
+    query = query.replace("wikipedia", "")
+    results = wikipedia.summary(query, sentences=2)
+    if debug == "True":
+        print(results)
+    else:
+        pass
+    speak(results)
+```
+
+The `wikipedia.summary()` call uses the [wikipedia](https://pypi.org/project/wikipedia/) Python package with `sentences=2` so the response stays concise enough to speak. If the topic is ambiguous or not found, the library raises a `wikipedia.exceptions.DisambiguationError` or `wikipedia.exceptions.PageError` — Jarvis will not catch these silently in the current implementation, so try rephrasing with a more specific topic name.
+
+<Note>
+  Wikipedia lookups require an active internet connection. If the request fails, Jarvis will raise an unhandled exception. Make sure you are online before using this command.
+</Note>
+
+## Current date
+
+Say **"date"** to hear today's date. Jarvis formats `datetime.datetime.now()` using Python's `strftime` mini-language and speaks the result:
+
+```python
+elif "date" in query:
+    print_and_speak(f"{datetime.datetime.now():%A, %B %d, %Y}")
+```
+
+**Example output:** `Monday, June 09, 2025`
+
+The format string `%A, %B %d, %Y` expands to the full weekday name, full month name, zero-padded day, and four-digit year.
+
+## Current time
+
+Say **"time"** to hear the current time in 12-hour format:
+
+```python
+elif "time" in query:
+    print_and_speak(f"{datetime.datetime.now():%I %M %p}")
+```
+
+**Example output:** `02 45 PM`
+
+The format string `%I %M %p` gives the 12-hour clock hour, minutes, and the AM/PM designator — separated by spaces so the TTS engine reads each part naturally.
+
+## "What's up" and "How are you"
+
+Say **"what's up"** or **"how are you"** to get a random casual reply. Jarvis picks one response at random from a fixed list every time:
+
+```python
+def command_whatsup():
+    st_msgs = [
+        "Just doing my thing!",
+        "I am fine!",
+        "Nice!",
+        "I am nice and full of energy",
+    ]
+    speak(random.choice(st_msgs))
+```
+
+These responses are fully offline — no network call is made. The same function is triggered by either phrase because both `"what's up"` and `"how are you"` map to `command_whatsup()` in the command dispatcher.
+
+<Tip>
+  You can customize the casual responses by editing the `st_msgs` list in `commands.py`. Add as many entries as you like — `random.choice()` will pick uniformly at random from the full list.
+</Tip>
