@@ -1,5 +1,5 @@
 ---
-title: "Get Started with Desktop Assistant in 5 Minutes"
+title: "Get Started with Desktop Assistant (Jarvis) in 5 Minutes"
 sidebarTitle: "Quickstart"
 description: "Clone the repo, install dependencies, configure config.ini, and give Jarvis your first voice command in under five minutes on Windows or Ubuntu."
 ---
@@ -125,7 +125,7 @@ Before you begin, make sure you have:
   <Step title="Give your first voice command">
     Click the **Speak** button in the GUI window (or, in debug mode, type at the terminal prompt) and say one of these to verify everything is working:
 
-    ```
+    ```text
     Hello
     ```
 
@@ -133,7 +133,7 @@ Before you begin, make sure you have:
 
     Try a follow-up:
 
-    ```
+    ```text
     What's up
     ```
 
@@ -141,7 +141,7 @@ Before you begin, make sure you have:
 
     To close the session, say:
 
-    ```
+    ```text
     Bye
     ```
 
@@ -175,7 +175,7 @@ The terminal shows a `Command |-->` prompt for every command cycle. All speech o
 
 When Jarvis starts it opens a **700×500 px** Tkinter window titled **"Desktop assistant"**. The window is not resizable horizontally but can be resized vertically.
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │  Desktop assistant                          │
 ├─────────────────────────────────────────────┤
@@ -203,21 +203,25 @@ When Jarvis starts it opens a **700×500 px** Tkinter window titled **"Desktop a
 
 ## Voice Commands Reference
 
-| What you say | What Jarvis does |
-|---|---|
-| `Hello` | Greets you: *"Hello Sir"* |
-| `What's up` / `How are you` | Replies with a random upbeat message |
-| `Open Google` / `Open YouTube` | Opens the site in your default browser |
-| `Search Google for <query>` | Searches Google (or your configured engine) for the query |
-| `Wikipedia <topic>` | Speaks a two-sentence Wikipedia summary |
-| `Date` | Announces the current date (e.g., *Monday, June 02, 2025*) |
-| `Time` | Announces the current time (e.g., *10 30 AM*) |
-| `Open email` | Prompts for a recipient and message, then sends via SMTP |
-| `Play music` | Plays a random MP3 from `musicpath` |
-| `Pause music` | Pauses playback |
-| `Unpause` | Resumes playback |
-| `Stop music` | Stops playback |
-| `Change rate to <wpm>` | Changes TTS speech rate on the fly |
-| `Change voice to male/female` | Switches TTS voice gender |
-| `Change volume to <0-100>` | Adjusts TTS volume |
-| `Bye` / `Stop` / `Abort` / `Nothing` | Ends the session |
+Some commands are only available in one entry point. The **Ubuntu** column applies to `Jarvis2.py`; the **Windows** column applies to `Jarvis2_4windows.py`.
+
+| What you say | What Jarvis does | Ubuntu | Windows |
+|---|---|---|---|
+| `Hello` | Greets you: *"Hello Sir"* | ✓ | ✓ |
+| `What's up` | Replies with a random upbeat message | ✓ | ✓ |
+| `How are you` | Replies with a random upbeat message | ✓ | — |
+| `Open Google` / `Open YouTube` | Opens the site in your default browser | ✓ | ✓ |
+| `Search for <query>` | Searches using your configured search engine | ✓ | ✓ |
+| `Wikipedia <topic>` | Speaks a two-sentence Wikipedia summary | ✓ | ✓ |
+| `Date` | Announces the current date (e.g., *Monday, June 02, 2025*) | ✓ | — |
+| `Time` | Announces the current time (e.g., *10 30 AM*) | ✓ | — |
+| `Open email` | Prompts for a recipient and message, then sends via SMTP | ✓ | — |
+| `Mail` | Prompts for a recipient and message, then sends via SMTP | — | ✓ |
+| `Play music` | Plays a random MP3 from `musicpath` | ✓ | ✓ |
+| `Pause music` | Pauses playback | ✓ | ✓ |
+| `Unpause` | Resumes playback | ✓ | ✓ |
+| `Stop music` | Stops playback | ✓ | ✓ |
+| `Change rate to <wpm>` | Changes TTS speech rate on the fly | — | ✓ |
+| `Change voice to male/female` | Switches TTS voice gender | — | ✓ |
+| `Change volume to <0-100>` | Adjusts TTS volume | — | ✓ |
+| `Bye` / `Stop` / `Abort` / `Nothing` | Ends the session | ✓ | ✓ |

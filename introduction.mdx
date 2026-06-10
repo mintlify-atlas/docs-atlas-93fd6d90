@@ -12,11 +12,11 @@ Jarvis combines several capabilities into a single conversational interface:
 
 - **Voice recognition** — captures audio from your microphone and transcribes it using the Google Speech Recognition engine via the `SpeechRecognition` library.
 - **Text-to-speech (TTS)** — responds out loud using `pyttsx3`, an offline TTS engine that works with SAPI5 on Windows and eSpeak on Ubuntu.
-- **Web browsing** — opens popular websites (Google, YouTube, Wikipedia, Amazon, GitHub) and fires off searches on your configured search engine.
+- **Web browsing** — opens popular websites (Google, YouTube, Wikipedia, Amazon; plus GitHub on Windows) and fires off searches on your configured search engine.
 - **Wikipedia lookups** — fetches two-sentence summaries directly from Wikipedia.
 - **Email** — composes and sends emails via SMTP using credentials stored in `config.ini`.
 - **Music playback** — plays and controls MP3 files from a configured folder using `pygame.mixer`.
-- **System time and date** — announces the current time and date on request.
+- **System time and date** — announces the current time and date on request (Ubuntu entry point only).
 - **Graphical interface** — displays a scrollable chat log and a **Speak** button inside a Tkinter window so you can follow the conversation visually.
 
 ## Architecture Overview
@@ -27,7 +27,7 @@ The project's source lives entirely in the `src/` directory and is split into fi
 |---|---|
 | `Jarvis2.py` | **Ubuntu entry point.** Self-contained: embeds TTS, speech recognition, and command dispatch in one file. |
 | `Jarvis2_4windows.py` | **Windows entry point.** Reads `config.ini` at startup, then delegates to `actions.py` and `commands.py`. |
-| `actions.py` | Shared helpers — `speak()`, `wish_me()`, `search_engine_selector()`, and voice-settings mutators (`change_rate`, `change_voice`, `change_volume`). |
+| `actions.py` | Windows helpers — `speak()`, `wish_me()`, `search_engine_selector()`, and voice-settings mutators (`change_rate`, `change_voice`, `change_volume`). Used by `Jarvis2_4windows.py` only; initialises the SAPI5 TTS engine. |
 | `commands.py` | Individual command handlers (`command_wikipedia`, `command_open`, `command_search`, `command_mail`, `command_play_music`, etc.). |
 | `gui.py` | Tkinter window definition — the 700×500 `root` window, scrollable `Listbox` chat log, and the **Speak** button. |
 
@@ -37,19 +37,19 @@ The Windows entry point (`Jarvis2_4windows.py`) checks for `config.ini` before d
 
 <CardGroup cols={2}>
   <Card title="Offline Text-to-Speech" icon="volume-high">
-    Uses `pyttsx3` for TTS — no internet connection required to speak responses. Voice, rate (default 150 wpm), and volume are all adjustable at runtime or via `config.ini`.
+    Uses `pyttsx3` for TTS — no internet connection required to speak responses. On Windows, voice, rate (default 150 wpm), and volume are adjustable at runtime or via `config.ini`.
   </Card>
   <Card title="Google Speech Recognition" icon="microphone">
     Captures audio with `PyAudio` and transcribes it through the Google Speech Recognition API. Energy threshold (default 300) and pause threshold (0.5 s) are tunable.
   </Card>
   <Card title="Configurable Search Engine" icon="magnifying-glass">
-    Pick Google, Bing, DuckDuckGo, or YouTube as your default search engine in `config.ini`. Any other value is validated as a live URL before falling back to Google.
+    Pick Google, Bing, DuckDuckGo, or YouTube as your default search engine in `config.ini` (Windows only). Any other value is validated as a live URL before falling back to Google.
   </Card>
   <Card title="Debug / Type Mode" icon="terminal">
-    Set `debug = True` in `config.ini` to type commands at the terminal instead of speaking — useful for testing without a microphone.
+    Set `debug = True` in `config.ini` to type commands at the terminal instead of speaking — useful for testing without a microphone (Windows entry point only).
   </Card>
   <Card title="Music Playback" icon="music">
-    Plays, pauses, unpauses, and stops MP3 files via `pygame.mixer`. Point `musicpath` in `config.ini` to your music folder.
+    Plays, pauses, unpauses, and stops MP3 files via `pygame.mixer`. On Windows, point `musicpath` in `config.ini` to your music folder.
   </Card>
   <Card title="Cross-Platform" icon="laptop">
     Runs on Windows (with SAPI5) and Ubuntu (with eSpeak). Separate entry points and requirement files keep platform-specific dependencies isolated.

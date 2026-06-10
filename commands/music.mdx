@@ -4,7 +4,11 @@ sidebarTitle: "Music"
 description: "Play, pause, resume, and stop local MP3 tracks using voice commands — powered by the pygame mixer and a configurable music folder path."
 ---
 
-Jarvis controls local MP3 playback through the `pygame.mixer` module. You can start, pause, resume, and stop music entirely by voice, with no need to touch the keyboard. Playback picks a track at random from your music folder each time you say "play music", so the experience stays varied across sessions.
+Jarvis controls local MP3 playback through the `pygame.mixer` module (Windows version). You can start, pause, resume, and stop music entirely by voice, with no need to touch the keyboard. Playback picks a track at random from your music folder each time you say "play music", so the experience stays varied across sessions.
+
+<Note>
+  The Ubuntu version (`Jarvis2.py`) plays music using `os.system()` instead of `pygame.mixer`, and expects five tracks (`music1` through `music5`). The Windows version (`Jarvis2_4windows.py`) uses `pygame.mixer` and expects four tracks (`music1` through `music4`). This page documents the Windows implementation in `commands.py`.
+</Note>
 
 ## Prerequisites
 
@@ -75,7 +79,7 @@ def command_stop_music():
 
 The `command_play_music()` function looks for files using the tuple `("music1", "music2", "music3", "music4")`. Your files **must** be named exactly:
 
-```
+```text
 music1.mp3
 music2.mp3
 music3.mp3

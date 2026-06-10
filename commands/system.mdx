@@ -37,23 +37,6 @@ def wish_me(master):
 
 `master` is the name configured in `config.ini` under `[DEFAULT]` → `master`. The greeting is spoken immediately after *"Initializing Jarvis…."* every time the program starts.
 
-## Casual conversation
-
-### "what's up" / "how are you"
-
-Say either phrase for a random friendly response:
-
-```python
-def command_whatsup():
-    st_msgs = [
-        "Just doing my thing!",
-        "I am fine!",
-        "Nice!",
-        "I am nice and full of energy",
-    ]
-    speak(random.choice(st_msgs))
-```
-
 ## Exiting
 
 ### "bye"

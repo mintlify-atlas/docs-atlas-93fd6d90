@@ -1,5 +1,5 @@
 ---
-title: "Configure Desktop Assistant with config.ini"
+title: "Configure Desktop Assistant Settings with config.ini"
 sidebarTitle: "Config File"
 description: "Reference for every config.ini parameter that controls Jarvis — names, search engines, microphone thresholds, TTS voice, and email credentials."
 ---
@@ -40,9 +40,10 @@ password =
 <ParamField path="search_engine" type="string" default="Google">
   The default search engine used by the `search` command. Built-in options are
   `Google`, `Bing`, `DuckDuckGo`, and `Youtube`. You can also supply a custom
-  domain name (e.g. `stackoverflow`) — Jarvis will attempt
-  `https://<value>.com?q=...` and fall back to Google if the domain is
-  unreachable.
+  domain name (e.g. `stackoverflow`) — Jarvis validates the domain by making a
+  test request to `https://<value>.com` and, if it responds with HTTP 200, uses
+  it as the search base URL. If the domain is unreachable, Jarvis falls back to
+  Google.
 </ParamField>
 
 <ParamField path="debug" type="boolean" default="False">

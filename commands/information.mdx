@@ -1,14 +1,22 @@
 ---
 title: "Wikipedia Lookups, Date, and Time by Voice"
 sidebarTitle: "Information"
-description: "Ask Jarvis for Wikipedia summaries, the current date and time, or just say how are you — all retrieved and spoken back in real time."
+description: "Ask Jarvis for Wikipedia summaries, the current date and time, or get a casual response when you say what's up — all spoken back in real time."
 ---
 
-Jarvis handles a set of conversational and informational commands out of the box — look up any topic on Wikipedia, hear today's date and time spoken aloud, or get a friendly response when you just want to check in. Wikipedia lookups and speech recognition both require an active internet connection; date, time, and casual responses work fully offline.
+Jarvis handles a set of conversational and informational commands out of the box — look up any topic on Wikipedia, hear today's date and time spoken aloud, or get a friendly response when you just want to check in. Wikipedia lookups and speech recognition both require an active internet connection; casual responses work fully offline.
+
+<Note>
+  The **date** and **time** commands are implemented only in `Jarvis2.py` (the Ubuntu version). They are not available in `Jarvis2_4windows.py` (the Windows version).
+</Note>
 
 ## Wikipedia lookups
 
 Say **"wikipedia [topic]"** to get a spoken summary of any article. Jarvis strips the trigger word from your query, fetches the first two sentences of the Wikipedia article, and speaks them back.
+
+<Note>
+  In `Jarvis2_4windows.py`, `command_wikipedia` is called as `command_wikipedia(speak, debug, query)` — passing the `speak` function as the first argument. The function definition in `commands.py` declares `command_wikipedia(debug, query)` (two parameters). The `speak` import from `actions` is used directly inside the function body.
+</Note>
 
 ```python
 def command_wikipedia(debug, query):
@@ -54,9 +62,9 @@ elif "time" in query:
 
 The format string `%I %M %p` gives the 12-hour clock hour, minutes, and the AM/PM designator — separated by spaces so the TTS engine reads each part naturally.
 
-## "What's up" and "How are you"
+## "What's up"
 
-Say **"what's up"** or **"how are you"** to get a random casual reply. Jarvis picks one response at random from a fixed list every time:
+Say **"what's up"** to get a random casual reply. Jarvis picks one response at random from a fixed list every time:
 
 ```python
 def command_whatsup():
@@ -69,7 +77,7 @@ def command_whatsup():
     speak(random.choice(st_msgs))
 ```
 
-These responses are fully offline — no network call is made. The same function is triggered by either phrase because both `"what's up"` and `"how are you"` map to `command_whatsup()` in the command dispatcher.
+These responses are fully offline — no network call is made. `command_whatsup()` is triggered when `"what's up"` is detected in the recognized query.
 
 <Tip>
   You can customize the casual responses by editing the `st_msgs` list in `commands.py`. Add as many entries as you like — `random.choice()` will pick uniformly at random from the full list.

@@ -1,5 +1,5 @@
 ---
-title: "Install Desktop Assistant on Windows and Ubuntu"
+title: "Install Desktop Assistant (Jarvis) on Windows and Ubuntu"
 sidebarTitle: "Installation"
 description: "Step-by-step instructions to install Desktop Assistant (Jarvis) on Windows or Ubuntu, including dependencies, binary installers, and troubleshooting tips."
 ---
@@ -161,4 +161,4 @@ If you hear nothing, re-run `sudo apt-get install espeak` and verify your system
 
 ### SpeechRecognition returns no results
 
-`SpeechRecognition` uses the Google Speech Recognition API over the internet. Verify your network connection and check that your microphone is selected as the default input device in your OS sound settings. You can also lower the `energy_threshold` value in `config.ini` (default: `300`) if the assistant isn't picking up quieter speech.
+`SpeechRecognition` uses the Google Speech Recognition API over the internet. Verify your network connection and check that your microphone is selected as the default input device in your OS sound settings. On Windows, you can lower the `energy_threshold` value in `config.ini` (default: `300`) if the assistant isn't picking up quieter speech. On Ubuntu, the energy threshold is hardcoded at `300` in `Jarvis2.py` and must be changed in the source directly.

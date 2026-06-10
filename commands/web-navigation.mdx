@@ -108,7 +108,7 @@ Supported built-in values are `Google`, `Bing`, `DuckDuckGo`, and `Youtube`. Any
 
 ## How URLs are opened
 
-Both `open_url()` calls in `actions.py` and `Jarvis2.py` use `webbrowser.open()` to launch the URL in whatever your operating system considers the default browser:
+The `open_url()` function in `actions.py` calls `webbrowser.open()` to launch the URL in the default browser, then also attempts to open it with a hardcoded macOS Chrome path:
 
 ```python
 def open_url(url):
@@ -116,6 +116,10 @@ def open_url(url):
     chrome_path = r"open -a /Applications/Google\ Chrome.app %s"
     webbrowser.get(chrome_path).open(url)
 ```
+
+<Warning>
+  The `chrome_path` line uses the `open -a` shell command, which is macOS-specific. On Windows or Linux this second call will fail. The first `webbrowser.open(url)` call still opens the URL in your default browser regardless.
+</Warning>
 
 <Tip>
   To add new websites, open `Jarvis2_4windows.py` and extend the `popular_websites` dictionary with a lowercase key and the full URL as the value — for example `"reddit": "https://www.reddit.com"`. No other changes are required.
